@@ -1,0 +1,32 @@
+## .NET & C# Ignore
+**/bin/
+**/obj/
+**/log/
+**/logs/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.userprefs
+*.pidb
+*.booproj
+*.svclog
+
+## Visual Studio & JetBrains & VSCode
+.vs/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+## Windows runtime & temp
+winws.exe
+windivert*.sys
+WinDivert*.dll
+*.tmp
+*.log
+
+## OS artifacts
+.DS_Store
+Thumbs.db

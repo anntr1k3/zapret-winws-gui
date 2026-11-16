@@ -1,0 +1,56 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build solution
+        run: dotnet build --no-restore -c Release
+
+      - name: Run xUnit tests
+        run: dotnet test --no-build -c Release --verbosity normal
+
+  publish-windows-executable:
+    needs: build-and-test
+    runs-on: windows-latest
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Publish single-file Windows executable
+        run: |
+          dotnet publish ZapretWinwsGui/ZapretWinwsGui.csproj -c Release -r win-x64 -p:PublishSingleFile=true --self-contained true -o ./publish
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZapretWinwsGui-win-x64
+          path: ./publish/ZapretWinwsGui.exe
