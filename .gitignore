@@ -21,6 +21,8 @@
 *~
 
 ## Windows runtime & temp
+publish/
+dist/
 winws.exe
 windivert*.sys
 WinDivert*.dll

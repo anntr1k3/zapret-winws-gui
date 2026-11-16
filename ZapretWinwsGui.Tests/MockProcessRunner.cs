@@ -4,6 +4,7 @@ namespace ZapretWinwsGui.Tests;
 
 public class MockProcessRunner : IProcessRunner
 {
+    public bool IsAdministrator { get; set; } = true;
     public List<(string FileName, string Arguments)> Executions { get; } = [];
     public HashSet<string> RunningProcessNames { get; } = [];
     public Dictionary<string, ProcessRunResult> RunResults { get; } = [];

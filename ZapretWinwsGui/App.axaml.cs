@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using ZapretWinwsGui.ViewModels;
@@ -17,10 +18,22 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new MainWindow
-            {
-                DataContext = new MainViewModel(),
-            };
+            var mainWindow = new MainWindow();
+            var mainViewModel = new MainViewModel(
+                showWindow: () =>
+                {
+                    mainWindow.Show();
+                    mainWindow.WindowState = WindowState.Normal;
+                    mainWindow.Activate();
+                },
+                exitApp: () =>
+                {
+                    mainWindow.RequestExplicitExit();
+                });
+
+            mainWindow.DataContext = mainViewModel;
+            DataContext = mainViewModel;
+            desktop.MainWindow = mainWindow;
         }
 
         base.OnFrameworkInitializationCompleted();

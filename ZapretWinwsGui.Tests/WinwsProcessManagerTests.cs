@@ -57,4 +57,25 @@ public class WinwsProcessManagerTests
         Assert.Equal(ProcessState.Stopped, manager.State);
         Assert.Null(manager.ActiveStrategy);
     }
+
+    [Fact]
+    public void ResolveWinwsPath_PrefersBinSubfolder_WhenExists()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"resolve-test-{Guid.NewGuid():N}");
+        var binDir = Path.Combine(tempDir, "bin");
+        Directory.CreateDirectory(binDir);
+
+        try
+        {
+            var expectedPath = Path.Combine(binDir, "winws.exe");
+            File.WriteAllText(expectedPath, "mock");
+
+            var resolved = WinwsProcessManager.ResolveWinwsPath(tempDir);
+            Assert.Equal(expectedPath, resolved);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, recursive: true);
+        }
+    }
 }

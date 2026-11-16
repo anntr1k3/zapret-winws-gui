@@ -27,7 +27,22 @@ public class WinwsProcessManager
         _runner = runner ?? new SystemProcessRunner();
     }
 
+    public IProcessRunner Runner => _runner;
+
     public bool IsRunning => State == ProcessState.Running && _currentProcess is { HasExited: false };
+
+    public static string ResolveWinwsPath(string binDirectory)
+    {
+        var inBin = Path.Combine(binDirectory, "bin", "winws.exe");
+        if (File.Exists(inBin))
+            return inBin;
+
+        var inRoot = Path.Combine(binDirectory, "winws.exe");
+        if (File.Exists(inRoot))
+            return inRoot;
+
+        return inBin;
+    }
 
     public void Start(StrategyModel strategy, string binDirectory)
     {
@@ -39,7 +54,11 @@ public class WinwsProcessManager
         State = ProcessState.Starting;
         StateChanged?.Invoke(State);
 
-        var winwsPath = Path.Combine(binDirectory, "winws.exe");
+        var winwsPath = ResolveWinwsPath(binDirectory);
+        var workingDir = Path.GetDirectoryName(winwsPath);
+        if (string.IsNullOrEmpty(workingDir) || !Directory.Exists(workingDir))
+            workingDir = binDirectory;
+
         LogReceived?.Invoke($"[MANAGER] Запуск winws: {strategy.Name}");
         LogReceived?.Invoke($"[MANAGER] Путь: {winwsPath}");
         LogReceived?.Invoke($"[MANAGER] Аргументы: {strategy.RawArguments}");
@@ -49,7 +68,7 @@ public class WinwsProcessManager
             // Kill any stray or orphaned winws instances before starting
             _runner.KillProcessesByName("winws");
 
-            _currentProcess = _runner.Start(winwsPath, strategy.RawArguments, binDirectory);
+            _currentProcess = _runner.Start(winwsPath, strategy.RawArguments, workingDir);
             ActiveStrategy = strategy;
             StartedAt = DateTime.UtcNow;
             State = ProcessState.Running;

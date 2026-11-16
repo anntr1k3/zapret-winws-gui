@@ -21,7 +21,11 @@
 - 🚀 **Управление в 1 клик:**
   - Запуск, остановка и перезапуск процесса `winws.exe` без открытых консольных окон.
   - Управление постоянной системной службой Windows (`sc.exe` / SCM) с поддержкой автозагрузки при старте системы.
-  - Интеграция с системным треем Windows: сворачивание, индикация статуса и быстрое переключение стратегий.
+  - Интеграция с системным треем Windows: сворачивание приложения при закрытии окна, индикация статуса в подсказке и нативное контекстное меню.
+
+- 📦 **Встроенный менеджер компонентов Flowseal:**
+  - Проверка наличия `winws.exe`, сетевого драйвера `WinDivert` и списков сайтов (`lists/`).
+  - Скачивание и обновление актуального бандла Flowseal в один клик прямо из программы.
 
 - 📜 **Автоматический каталог стратегий:**
   - Парсинг стратегий Flowseal (`general.bat`, `discord.bat` и др.) прямо из каталога.
@@ -32,10 +36,10 @@
   - Проверка голосовых и текстовых шлюзов Discord (WebRTC / Voice Gateway).
   - Замер задержки (ping / latency) и вывод статуса для каждой стратегии.
 
-- 🩺 **Глубокая диагностика конфликтов:**
+- 🩺 **Глубокая диагностика конфликтов и UAC:**
+  - Проверка прав администратора и автозапрос через встроенный UAC-манифест.
   - Обнаружение конкурирующих инструментов: GoodbyeDPI, ByeByeDPI, WARP, AmneziaVPN, Outline.
-  - Проверка системных прокси (WinINet / Windows Settings).
-  - Проверка статуса драйвера `WinDivert`.
+  - Проверка системных прокси и состояния службы/драйвера `WinDivert`.
 
 - 🧹 **Очистка кэша Discord:**
   - Безопасное завершение процессов Discord и очистка каталогов кэша в один клик.
@@ -47,19 +51,22 @@
 ```
 zapret-winws-gui/
 ├── ZapretWinwsGui.sln               # Решение .NET 9
+├── build.ps1                        # Пайплайн сборки, тестирования и публикации
+├── installer/
+│   └── zapret-winws-gui.iss         # Скрипт Inno Setup для сборки Setup.exe
 ├── ZapretWinwsGui/                  # Основное приложение Avalonia UI
 │   ├── Assets/                      # Иконки, графика и ресурсы
 │   ├── Core/                        # Бизнес-логика и сервисы ядра
-│   │   ├── Diagnostics/             # Диагностика конфликтов и сети
+│   │   ├── Bundling/                # Проверка и скачивание компонентов Flowseal
+│   │   ├── Diagnostics/             # Диагностика конфликтов и UAC
 │   │   ├── Discord/                 # Очистка кэша и процессов Discord
 │   │   ├── Process/                 # Управление процессом winws.exe
 │   │   ├── Services/                # Управление службами Windows (SCM)
 │   │   ├── Strategies/              # Парсинг и валидация .bat стратегий
 │   │   └── Tester/                  # Потоковый тестировщик YouTube/Discord
-│   ├── Models/                      # Модели данных
 │   ├── ViewModels/                  # MVVM ViewModels (CommunityToolkit.Mvvm)
 │   └── Views/                       # XAML-разметка окон (Fluent Design)
-└── ZapretWinwsGui.Tests/            # Автоматизированные xUnit тесты
+└── ZapretWinwsGui.Tests/            # 19 модульных xUnit тестов (100% PASS)
 ```
 
 ---
@@ -69,19 +76,19 @@ zapret-winws-gui/
 ### Требования
 - [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
 
-### Сборка решения:
-```bash
-dotnet build
-```
-
-### Запуск тестов:
-```bash
+### Сборка и тестирование:
+```powershell
+# Запуск тестов
 dotnet test
-```
 
-### Публикация автономного .exe под Windows (x64):
-```bash
-dotnet publish ZapretWinwsGui/ZapretWinwsGui.csproj -c Release -r win-x64 -p:PublishSingleFile=true --self-contained true
+# Запуск приложения
+dotnet run --project ZapretWinwsGui/ZapretWinwsGui.csproj
+
+# Автономная публикация win-x64 (в папку ./publish)
+.\build.ps1
+
+# Сборка установщика Inno Setup (в папку ./dist)
+.\build.ps1 -PackageInstaller
 ```
 
 ---

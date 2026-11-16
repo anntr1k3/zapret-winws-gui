@@ -57,6 +57,19 @@
                 <StackPanel Spacing="16">
                     <TextBlock Text="Управление процессом и службой" FontSize="20" FontWeight="SemiBold" Foreground="#F5F5FA"/>
 
+                    <!-- Admin Warning Banner (only if not elevated) -->
+                    <Border Background="#442211" BorderBrush="#FF8833" BorderThickness="1" CornerRadius="8" Padding="12"
+                            IsVisible="{Binding !IsAdministrator}">
+                        <DockPanel>
+                            <TextBlock Text="⚠️" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="Требуются права администратора" FontWeight="SemiBold" Foreground="#FFAA55"/>
+                                <TextBlock Text="Приложение запущено без прав администратора. Сетевой драйвер WinDivert и системная служба Windows могут работать некорректно." 
+                                           FontSize="12" Foreground="#D0C0B0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
                     <!-- Process Card -->
                     <Border Background="#23232C" CornerRadius="10" Padding="16" BorderBrush="#30303C" BorderThickness="1">
                         <StackPanel Spacing="12">
@@ -99,6 +112,25 @@
                                 <Button Content="Установить и запустить службу" Command="{Binding InstallServiceCommand}" Margin="0,0,10,0"/>
                                 <Button Content="Удалить службу" Command="{Binding RemoveServiceCommand}" Margin="0,0,10,0"/>
                                 <Button Content="Обновить статус" Command="{Binding RefreshServiceStatusCommand}"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Flowseal Bundle Card -->
+                    <Border Background="#23232C" CornerRadius="10" Padding="16" BorderBrush="#30303C" BorderThickness="1">
+                        <StackPanel Spacing="12">
+                            <DockPanel>
+                                <TextBlock Text="📦 Компоненты Flowseal (winws / WinDivert / списки)" FontWeight="SemiBold" FontSize="15" DockPanel.Dock="Left"/>
+                            </DockPanel>
+
+                            <Border Background="#1C1C24" CornerRadius="6" Padding="10">
+                                <TextBlock Text="{Binding BundleDetailsText}" FontSize="12" Foreground="#D0D0E0" TextWrapping="Wrap"/>
+                            </Border>
+
+                            <WrapPanel Margin="0,6,0,0">
+                                <Button Content="📥 Скачать / обновить Flowseal" Command="{Binding DownloadFlowsealBundleCommand}" 
+                                        Background="#3B68FF" Foreground="White" Margin="0,0,10,0" Padding="12,6"/>
+                                <Button Content="🔄 Проверить файлы" Command="{Binding RefreshBundleStatusCommand}" Padding="12,6"/>
                             </WrapPanel>
                         </StackPanel>
                     </Border>

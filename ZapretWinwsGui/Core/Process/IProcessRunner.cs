@@ -4,6 +4,7 @@ public record ProcessRunResult(int ExitCode, string StandardOutput, string Stand
 
 public interface IProcessRunner
 {
+    bool IsAdministrator { get; }
     Task<ProcessRunResult> RunAsync(string fileName, string arguments, CancellationToken cancellationToken = default);
     IActiveProcess Start(string fileName, string arguments, string workingDirectory = "");
     bool IsProcessRunning(string processName);

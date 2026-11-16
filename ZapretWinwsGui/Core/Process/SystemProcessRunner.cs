@@ -4,6 +4,20 @@ namespace ZapretWinwsGui.Core.Process;
 
 public class SystemProcessRunner : IProcessRunner
 {
+    public bool IsAdministrator
+    {
+        get
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                using var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+                var principal = new System.Security.Principal.WindowsPrincipal(identity);
+                return principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+            }
+            return true;
+        }
+    }
+
     public async Task<ProcessRunResult> RunAsync(string fileName, string arguments, CancellationToken cancellationToken = default)
     {
         var psi = new ProcessStartInfo

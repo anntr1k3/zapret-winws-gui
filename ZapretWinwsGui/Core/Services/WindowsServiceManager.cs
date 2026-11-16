@@ -62,7 +62,7 @@ public class WindowsServiceManager
 
     public async Task<bool> InstallAsync(StrategyModel strategy, string binDirectory, bool startImmediately = true, CancellationToken ct = default)
     {
-        var winwsPath = Path.Combine(binDirectory, "winws.exe");
+        var winwsPath = WinwsProcessManager.ResolveWinwsPath(binDirectory);
         LogReceived?.Invoke($"[SERVICE] Установка системной службы '{ServiceName}'...");
 
         // Remove old service if already exists

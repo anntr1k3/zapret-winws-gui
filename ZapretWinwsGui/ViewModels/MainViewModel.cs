@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ZapretWinwsGui.Core.Bundling;
 using ZapretWinwsGui.Core.Diagnostics;
 using ZapretWinwsGui.Core.Discord;
 using ZapretWinwsGui.Core.Process;
@@ -12,12 +13,30 @@ namespace ZapretWinwsGui.ViewModels;
 
 public partial class MainViewModel : ViewModelBase
 {
+    private readonly Action? _showWindowAction;
+    private readonly Action? _exitAppAction;
     private readonly StrategyParser _strategyParser = new();
     private readonly WinwsProcessManager _processManager;
     private readonly WindowsServiceManager _serviceManager;
     private readonly ConflictDiagnostics _diagnostics;
     private readonly DiscordCacheCleaner _discordCleaner;
     private readonly StrategyTester _tester;
+    private readonly FlowsealBundleManager _bundleManager = new();
+
+    [ObservableProperty]
+    private BundleStatus? _bundleStatus;
+
+    [ObservableProperty]
+    private bool _isBundleComplete = false;
+
+    [ObservableProperty]
+    private string _bundleDetailsText = "Проверка компонентов...";
+
+    [ObservableProperty]
+    private string _trayToolTip = "Zapret WinWS · Остановлен";
+
+    [ObservableProperty]
+    private bool _isAdministrator = true;
 
     [ObservableProperty]
     private int _selectedTabIndex = 0;
@@ -51,11 +70,17 @@ public partial class MainViewModel : ViewModelBase
     public ObservableCollection<ProbeResult> TestResults { get; } = [];
     public ObservableCollection<string> Logs { get; } = [];
 
-    public MainViewModel()
+    public MainViewModel(IProcessRunner? runner = null, Action? showWindow = null, Action? exitApp = null)
     {
-        _processManager = new WinwsProcessManager();
-        _serviceManager = new WindowsServiceManager();
-        _diagnostics = new ConflictDiagnostics();
+        _showWindowAction = showWindow;
+        _exitAppAction = exitApp;
+
+        var processRunner = runner ?? new SystemProcessRunner();
+        _isAdministrator = processRunner.IsAdministrator;
+
+        _processManager = new WinwsProcessManager(processRunner);
+        _serviceManager = new WindowsServiceManager(processRunner);
+        _diagnostics = new ConflictDiagnostics(processRunner);
         _discordCleaner = new DiscordCacheCleaner();
         _tester = new StrategyTester();
 
@@ -64,6 +89,7 @@ public partial class MainViewModel : ViewModelBase
         _serviceManager.LogReceived += AddLog;
 
         LoadDefaultStrategies();
+        RefreshBundleStatus();
         _ = RefreshServiceStatusAsync();
         RunDiagnosticsCommand.Execute(null);
     }
@@ -86,6 +112,7 @@ public partial class MainViewModel : ViewModelBase
             ProcessState.Failed => "Ошибка запуска",
             _ => "Остановлен"
         };
+        TrayToolTip = $"Zapret WinWS · {StatusText}";
     }
 
     private void LoadDefaultStrategies()
@@ -273,5 +300,82 @@ public partial class MainViewModel : ViewModelBase
     private void ClearLogs()
     {
         Logs.Clear();
+    }
+
+    [RelayCommand]
+    public void ShowMainWindow()
+    {
+        _showWindowAction?.Invoke();
+    }
+
+    [RelayCommand]
+    public void ExitApplication()
+    {
+        _processManager.Stop();
+        _exitAppAction?.Invoke();
+    }
+
+    [RelayCommand]
+    public void ToggleProcess()
+    {
+        if (IsRunning)
+        {
+            StopProcess();
+        }
+        else
+        {
+            StartProcess();
+        }
+    }
+
+    [RelayCommand]
+    public void RefreshBundleStatus()
+    {
+        var baseDir = AppContext.BaseDirectory;
+        var status = _bundleManager.CheckBundle(baseDir);
+        BundleStatus = status;
+        IsBundleComplete = status.IsComplete;
+        BundleDetailsText = status.Details;
+
+        var diskStrategies = _strategyParser.ScanDirectory(baseDir);
+        if (diskStrategies.Count > 0)
+        {
+            Strategies.Clear();
+            foreach (var s in diskStrategies)
+            {
+                Strategies.Add(s);
+            }
+            SelectedStrategy = Strategies.FirstOrDefault(s => s.IsRecommended) ?? Strategies.FirstOrDefault();
+        }
+    }
+
+    [RelayCommand]
+    public async Task DownloadFlowsealBundleAsync()
+    {
+        IsBusy = true;
+        BusyStatusText = "Загрузка компонентов Flowseal...";
+        try
+        {
+            var progress = new Progress<string>(msg =>
+            {
+                BusyStatusText = msg;
+                AddLog($"[BUNDLE] {msg}");
+            });
+
+            var success = await _bundleManager.DownloadAndDeployAsync(AppContext.BaseDirectory, progress: progress);
+            RefreshBundleStatus();
+            if (success)
+            {
+                AddLog("[BUNDLE] Компоненты Flowseal успешно установлены и готовы к работе.");
+            }
+            else
+            {
+                AddLog("[BUNDLE-ERR] Не удалось загрузить или распаковать компоненты Flowseal.");
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 }

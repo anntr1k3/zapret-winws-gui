@@ -44,6 +44,17 @@ public class ConflictDiagnostics
     {
         var issues = new List<DiagnosticIssue>();
 
+        // 0. Check administrator privileges
+        if (!_runner.IsAdministrator)
+        {
+            issues.Add(new DiagnosticIssue(
+                DiagnosticSeverity.Error,
+                "Отсутствуют права администратора",
+                "Приложение запущено без повышенных привилегий. Для работы драйвера WinDivert и управления системной службой требуются права администратора.",
+                "Перезапустите приложение от имени Администратора (ПКМ -> Запуск от имени администратора)."
+            ));
+        }
+
         // 1. Check for running conflicting processes
         foreach (var (processName, appName) in ConflictingApps)
         {
