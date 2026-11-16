@@ -2,7 +2,7 @@
 ; Generated for anntr1k3 / zapret-winws-gui
 
 #define MyAppName "Zapret WinWS GUI"
-#define MyAppVersion "1.1.0"
+#define MyAppVersion "1.0.0"
 #define MyAppPublisher "anntr1k3"
 #define MyAppURL "https://github.com/anntr1k3/zapret-winws-gui"
 #define MyAppExeName "ZapretWinwsGui.exe"
