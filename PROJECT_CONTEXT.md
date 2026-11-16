@@ -34,6 +34,7 @@ zapret-winws-gui/
 │   ├── Assets/                      # Графика, иконки
 │   ├── Core/                        # Бизнес-логика (не зависит от UI!)
 │   │   ├── Bundling/                # FlowsealBundleManager.cs (проверка и скачивание winws/списков)
+│   │   ├── Config/                  # AppSettings.cs, SettingsManager.cs (сохранение настроек в config.json)
 │   │   ├── Strategies/              # StrategyModel.cs, StrategyParser.cs
 │   │   ├── Process/                 # IProcessRunner.cs, SystemProcessRunner.cs, WinwsProcessManager.cs
 │   │   ├── Services/                # WindowsServiceManager.cs (управление sc.exe)
@@ -42,8 +43,9 @@ zapret-winws-gui/
 │   │   └── Tester/                  # StrategyTester.cs (тест googlevideo.com и Discord WebRTC)
 │   ├── ViewModels/                  # MainViewModel.cs, ViewModelBase.cs
 │   └── Views/                       # MainWindow.axaml (разметка Fluent UI), MainWindow.axaml.cs
-└── ZapretWinwsGui.Tests/            # 19 модульных xUnit тестов (100% PASS)
+└── ZapretWinwsGui.Tests/            # 23 модульных xUnit тестов (100% PASS)
     ├── FlowsealBundleManagerTests.cs
+    ├── SettingsManagerTests.cs
     ├── StrategyParserTests.cs
     ├── WinwsProcessManagerTests.cs
     ├── WindowsServiceManagerTests.cs
@@ -87,6 +89,12 @@ zapret-winws-gui/
 11. **Сборка и инсталлятор:**
     - Подготовлен скрипт пайплайна `build.ps1` для запуска тестов и публикации единого исполняемого файла win-x64 (`ZapretWinwsGui.exe`).
     - Подготовлен скрипт Inno Setup `installer/zapret-winws-gui.iss` для создания дистрибутива `Setup.exe`.
+12. **Сохранение конфигурации (`SettingsManager`):**
+    - Автоматическое сохранение и восстановление последней выбранной стратегии и настроек в `%APPDATA%\ZapretWinwsGui\config.json`.
+13. **Оформление и CI/CD:**
+    - Полноценное руководство пользователя, FAQ и матрица стратегий в `README.md`.
+    - Шаблоны Issue (`bug_report.md`, `feature_request.md`).
+    - GitHub Actions релизный workflow для автоматической публикации релизов по тегам `v*`.
 
 ---
 
@@ -97,7 +105,7 @@ zapret-winws-gui/
 dotnet restore
 dotnet build
 
-# Запуск тестов (19 тестов)
+# Запуск тестов (23 теста)
 dotnet test
 
 # Запуск GUI приложения

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ZapretWinwsGui.Core.Bundling;
+using ZapretWinwsGui.Core.Config;
 using ZapretWinwsGui.Core.Diagnostics;
 using ZapretWinwsGui.Core.Discord;
 using ZapretWinwsGui.Core.Process;
@@ -22,6 +23,8 @@ public partial class MainViewModel : ViewModelBase
     private readonly DiscordCacheCleaner _discordCleaner;
     private readonly StrategyTester _tester;
     private readonly FlowsealBundleManager _bundleManager = new();
+    private readonly SettingsManager _settingsManager;
+    private readonly AppSettings _settings;
 
     [ObservableProperty]
     private BundleStatus? _bundleStatus;
@@ -70,10 +73,16 @@ public partial class MainViewModel : ViewModelBase
     public ObservableCollection<ProbeResult> TestResults { get; } = [];
     public ObservableCollection<string> Logs { get; } = [];
 
-    public MainViewModel(IProcessRunner? runner = null, Action? showWindow = null, Action? exitApp = null)
+    public MainViewModel(
+        IProcessRunner? runner = null,
+        Action? showWindow = null,
+        Action? exitApp = null,
+        SettingsManager? settingsManager = null)
     {
         _showWindowAction = showWindow;
         _exitAppAction = exitApp;
+        _settingsManager = settingsManager ?? new SettingsManager();
+        _settings = _settingsManager.Load();
 
         var processRunner = runner ?? new SystemProcessRunner();
         _isAdministrator = processRunner.IsAdministrator;
@@ -92,6 +101,11 @@ public partial class MainViewModel : ViewModelBase
         RefreshBundleStatus();
         _ = RefreshServiceStatusAsync();
         RunDiagnosticsCommand.Execute(null);
+
+        if (_settings.AutoStartWinwsOnLaunch && SelectedStrategy != null)
+        {
+            StartProcess();
+        }
     }
 
     private void AddLog(string message)
@@ -168,7 +182,18 @@ public partial class MainViewModel : ViewModelBase
             UsesFakeUdp = true
         });
 
-        SelectedStrategy = Strategies.FirstOrDefault(s => s.IsRecommended) ?? Strategies.FirstOrDefault();
+        SelectedStrategy = Strategies.FirstOrDefault(s => s.Id == _settings.LastSelectedStrategyId)
+            ?? Strategies.FirstOrDefault(s => s.IsRecommended)
+            ?? Strategies.FirstOrDefault();
+    }
+
+    partial void OnSelectedStrategyChanged(StrategyModel? value)
+    {
+        if (value != null && _settings != null && _settingsManager != null)
+        {
+            _settings.LastSelectedStrategyId = value.Id;
+            _settingsManager.Save(_settings);
+        }
     }
 
     [RelayCommand]
@@ -345,7 +370,9 @@ public partial class MainViewModel : ViewModelBase
             {
                 Strategies.Add(s);
             }
-            SelectedStrategy = Strategies.FirstOrDefault(s => s.IsRecommended) ?? Strategies.FirstOrDefault();
+            SelectedStrategy = Strategies.FirstOrDefault(s => s.Id == _settings.LastSelectedStrategyId)
+                ?? Strategies.FirstOrDefault(s => s.IsRecommended)
+                ?? Strategies.FirstOrDefault();
         }
     }
 
