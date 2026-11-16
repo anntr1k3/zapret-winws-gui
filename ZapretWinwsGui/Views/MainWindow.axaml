@@ -1,22 +1,237 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:ZapretWinwsGui.ViewModels"
+        xmlns:diag="using:ZapretWinwsGui.Core.Diagnostics"
+        xmlns:strat="using:ZapretWinwsGui.Core.Strategies"
+        xmlns:test="using:ZapretWinwsGui.Core.Tester"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="880" d:DesignHeight="620"
         x:Class="ZapretWinwsGui.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="ZapretWinwsGui">
+        Title="Zapret WinWS · Панель управления"
+        Width="880" Height="620"
+        MinWidth="780" MinHeight="520"
+        WindowStartupLocation="CenterScreen">
 
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainViewModel />
-    </Design.DataContext>
+    <Grid ColumnDefinitions="220,*">
+        <!-- Sidebar Navigation -->
+        <Border Grid.Column="0" Background="#1E1E24" BorderBrush="#2C2C34" BorderThickness="0,0,1,0">
+            <DockPanel Margin="14,18,14,14">
+                <!-- Branding Header -->
+                <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,20">
+                    <TextBlock Text="🛡️ Zapret WinWS" FontWeight="SemiBold" FontSize="18" Foreground="#F0F0F5"/>
+                    <TextBlock Text="Flowseal &amp; bol-van edition" FontSize="11" Foreground="#888899"/>
+                </StackPanel>
 
-    <TextBox Text="{Binding Greeting}"
-             HorizontalAlignment="Center"
-             VerticalAlignment="Center" />
+                <!-- Status indicator at bottom of sidebar -->
+                <Border DockPanel.Dock="Bottom" Background="#262630" CornerRadius="8" Padding="12" Margin="0,10,0,0">
+                    <StackPanel Spacing="6">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Ellipse Width="10" Height="10" Fill="{Binding IsRunning, Converter={x:Null}}" 
+                                     Classes.active="{Binding IsRunning}"/>
+                            <TextBlock Text="{Binding StatusText}" FontWeight="Medium" FontSize="12" Foreground="#E0E0E8" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                        <ProgressBar IsIndeterminate="True" Height="2" IsVisible="{Binding IsBusy}"/>
+                        <TextBlock Text="{Binding BusyStatusText}" FontSize="10" Foreground="#AAAABB" IsVisible="{Binding IsBusy}" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Border>
 
+                <!-- Navigation List -->
+                <ListBox SelectedIndex="{Binding SelectedTabIndex}" Background="Transparent">
+                    <ListBoxItem Padding="10,8">⚡ Управление</ListBoxItem>
+                    <ListBoxItem Padding="10,8">📜 Стратегии</ListBoxItem>
+                    <ListBoxItem Padding="10,8">🧪 Тестировщик</ListBoxItem>
+                    <ListBoxItem Padding="10,8">🩺 Диагностика</ListBoxItem>
+                    <ListBoxItem Padding="10,8">🧹 Кэш Discord</ListBoxItem>
+                    <ListBoxItem Padding="10,8">📋 Журнал</ListBoxItem>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Carousel Grid.Column="1" SelectedIndex="{Binding SelectedTabIndex}" Margin="20">
+            <!-- TAB 0: Управление (Control & Status) -->
+            <ScrollViewer>
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Управление процессом и службой" FontSize="20" FontWeight="SemiBold" Foreground="#F5F5FA"/>
+
+                    <!-- Process Card -->
+                    <Border Background="#23232C" CornerRadius="10" Padding="16" BorderBrush="#30303C" BorderThickness="1">
+                        <StackPanel Spacing="12">
+                            <DockPanel>
+                                <TextBlock Text="🚀 Процесс WinWS" FontWeight="SemiBold" FontSize="15" DockPanel.Dock="Left"/>
+                                <Border Background="{Binding IsRunning, Converter={x:Null}}" CornerRadius="4" Padding="6,2" HorizontalAlignment="Right">
+                                    <TextBlock Text="{Binding StatusText}" FontSize="11"/>
+                                </Border>
+                            </DockPanel>
+
+                            <TextBlock Text="Быстрый выбор стратегии:" FontSize="12" Foreground="#AAAAAA"/>
+                            <ComboBox ItemsSource="{Binding Strategies}" SelectedItem="{Binding SelectedStrategy}" HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="strat:StrategyModel">
+                                        <TextBlock Text="{Binding Name}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+
+                            <WrapPanel Margin="0,6,0,0">
+                                <Button Content="▶ Запустить winws" Command="{Binding StartProcessCommand}" 
+                                        Background="#2D7D46" Foreground="White" Margin="0,0,10,0" Padding="14,8"/>
+                                <Button Content="⏹ Остановить" Command="{Binding StopProcessCommand}" 
+                                        Background="#A83232" Foreground="White" Padding="14,8"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Service Card -->
+                    <Border Background="#23232C" CornerRadius="10" Padding="16" BorderBrush="#30303C" BorderThickness="1">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="⚙️ Системная служба Windows (SCM)" FontWeight="SemiBold" FontSize="15"/>
+                            <TextBlock Text="Работает в фоне без открытых консольных окон даже после перезагрузки ПК." FontSize="12" Foreground="#888899"/>
+                            
+                            <Border Background="#1C1C24" CornerRadius="6" Padding="10">
+                                <TextBlock Text="{Binding ServiceStatusText}" FontWeight="Medium" FontSize="13" Foreground="#D0D0E0"/>
+                            </Border>
+
+                            <WrapPanel Margin="0,6,0,0">
+                                <Button Content="Установить и запустить службу" Command="{Binding InstallServiceCommand}" Margin="0,0,10,0"/>
+                                <Button Content="Удалить службу" Command="{Binding RemoveServiceCommand}" Margin="0,0,10,0"/>
+                                <Button Content="Обновить статус" Command="{Binding RefreshServiceStatusCommand}"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- TAB 1: Стратегии (Strategies) -->
+            <ScrollViewer>
+                <StackPanel Spacing="14">
+                    <TextBlock Text="Каталог стратегий Flowseal" FontSize="20" FontWeight="SemiBold"/>
+                    <ItemsControl ItemsSource="{Binding Strategies}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="strat:StrategyModel">
+                                <Border Background="#23232C" CornerRadius="8" Padding="14" Margin="0,0,0,10" BorderBrush="#30303C" BorderThickness="1">
+                                    <DockPanel>
+                                        <Button Content="Выбрать" Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).StartProcessCommand}" 
+                                                DockPanel.Dock="Right" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                        <StackPanel Spacing="4">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"/>
+                                                <TextBlock Text="{Binding Summary}" Foreground="#5AA9FF" FontSize="11" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding Description}" FontSize="12" Foreground="#9999AA" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding RawArguments}" FontSize="10" Foreground="#666677" FontFamily="Consolas, Monospace" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- TAB 2: Тестировщик (Tester) -->
+            <ScrollViewer>
+                <StackPanel Spacing="14">
+                    <DockPanel>
+                        <TextBlock Text="Тестировщик доступности" FontSize="20" FontWeight="SemiBold" DockPanel.Dock="Left"/>
+                        <Button Content="▶ Запустить тест" Command="{Binding RunStrategyTestCommand}" HorizontalAlignment="Right" Background="#3B68FF" Foreground="White" Padding="12,6"/>
+                    </DockPanel>
+
+                    <TextBlock Text="Проверка доступности медиа-потоков YouTube (googlevideo) и голосовых шлюзов Discord." FontSize="12" Foreground="#888899"/>
+
+                    <ItemsControl ItemsSource="{Binding TestResults}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="test:ProbeResult">
+                                <Border Background="#23232C" CornerRadius="8" Padding="12" Margin="0,0,0,8" BorderBrush="#30303C" BorderThickness="1">
+                                    <DockPanel>
+                                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" Spacing="8" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding LatencyMs, StringFormat='{}{0} мс'}" FontWeight="SemiBold" FontSize="12"/>
+                                            <Border Background="#2D7D46" CornerRadius="4" Padding="6,2" IsVisible="{Binding Success}">
+                                                <TextBlock Text="Доступен" FontSize="11" Foreground="White"/>
+                                            </Border>
+                                            <Border Background="#A83232" CornerRadius="4" Padding="6,2" IsVisible="{Binding !Success}">
+                                                <TextBlock Text="Сбой" FontSize="11" Foreground="White"/>
+                                            </Border>
+                                        </StackPanel>
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="{Binding TargetName}" FontWeight="SemiBold" FontSize="13"/>
+                                            <TextBlock Text="{Binding Details}" FontSize="11" Foreground="#9999AA"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- TAB 3: Диагностика (Diagnostics) -->
+            <ScrollViewer>
+                <StackPanel Spacing="14">
+                    <DockPanel>
+                        <TextBlock Text="Диагностика конфликтов" FontSize="20" FontWeight="SemiBold" DockPanel.Dock="Left"/>
+                        <Button Content="🔄 Перепроверить" Command="{Binding RunDiagnosticsCommand}" HorizontalAlignment="Right"/>
+                    </DockPanel>
+
+                    <TextBlock Text="Проверка сторонних программ, служб VPN, системных прокси и драйвера WinDivert." FontSize="12" Foreground="#888899"/>
+
+                    <ItemsControl ItemsSource="{Binding DiagnosticIssues}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="diag:DiagnosticIssue">
+                                <Border Background="#23232C" CornerRadius="8" Padding="14" Margin="0,0,0,10" BorderBrush="#30303C" BorderThickness="1">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="14" Foreground="#FFCC66"/>
+                                        <TextBlock Text="{Binding Description}" FontSize="12" Foreground="#CCCCCC"/>
+                                        <TextBlock Text="{Binding Remediation, StringFormat='Совет: {0}'}" FontSize="11" Foreground="#88BBFF" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- TAB 4: Кэш Discord (Discord Cache) -->
+            <ScrollViewer>
+                <StackPanel Spacing="14">
+                    <TextBlock Text="Очистка кэша Discord" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock Text="Клиент Discord кэширует сбойные голосовые соединения и видеосессии, из-за чего голосовые каналы могут не работать даже после включения правильной стратегии." FontSize="12" Foreground="#888899" TextWrapping="Wrap"/>
+
+                    <Border Background="#23232C" CornerRadius="10" Padding="16" BorderBrush="#30303C" BorderThickness="1">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="Будут очищены:" FontWeight="SemiBold" FontSize="13"/>
+                            <TextBlock Text="• %APPDATA%\discord\Cache&#x0a;• %APPDATA%\discord\Code Cache&#x0a;• %APPDATA%\discord\GPUCache" FontSize="11" FontFamily="Consolas, Monospace" Foreground="#AAAAAA"/>
+                            <TextBlock Text="Запущенные процессы Discord будут корректно завершены." FontSize="12" Foreground="#FFBB66"/>
+
+                            <Button Content="🧹 Очистить кэш Discord" Command="{Binding CleanDiscordCacheCommand}" 
+                                    Background="#5865F2" Foreground="White" Padding="14,8" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- TAB 5: Журнал (Logs) -->
+            <DockPanel>
+                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                    <TextBlock Text="Журнал событий" FontSize="20" FontWeight="SemiBold" DockPanel.Dock="Left"/>
+                    <Button Content="Очистить" Command="{Binding ClearLogsCommand}" HorizontalAlignment="Right"/>
+                </DockPanel>
+
+                <Border Background="#1A1A20" CornerRadius="8" Padding="10" BorderBrush="#2C2C34" BorderThickness="1">
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding Logs}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" FontFamily="Consolas, Monospace" FontSize="11" Foreground="#CCCCCC" Margin="0,1"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </DockPanel>
+        </Carousel>
+    </Grid>
 </Window>
