@@ -9,7 +9,8 @@
 [![Avalonia UI](https://img.shields.io/badge/UI-Avalonia_Fluent-FF5500)](https://avaloniaui.net/)
 [![Platform](https://img.shields.io/badge/Platform-Windows_10_|_11-blue?logo=windows)](https://microsoft.com)
 
-**Автономный порт интерфейса управления zapret/winws с поддержкой стратегий Flowseal.**
+**Автономный порт интерфейса управления zapret/winws с поддержкой стратегий Flowseal.**  
+📖 **[Полный контекст проекта и руководство по передаче (PROJECT_CONTEXT.md)](PROJECT_CONTEXT.md)**
 
 </div>
 
